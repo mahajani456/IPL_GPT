@@ -1,0 +1,29 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Query Result</h1>
+    <p><strong>Entered query:</strong> <span id="query2"> {{ query2 }}</span></p>
+    <p><strong>Generated SQL query:</strong><span id="sql-query">{{ sql_query }}</span></p>
+    <div id="query-result">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                {% for key in result[0].keys() %}
+                <th scope="col">{{ key }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in result %}
+            <tr>
+                {% for value in row.values() %}
+                <td>{{ value }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

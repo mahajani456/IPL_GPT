@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Dashboard</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Add custom CSS -->
+    <link rel="stylesheet" href="/static/custom.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="my-4">Top 10 Run-Scorers in IPL</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Player</th>
+                    <th scope="col">Runs</th>
+                </tr>
+            </thead>
+            <tbody id="top-scorers-table">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="container">
+        <h1 class="my-4">Most Run Queries</h1>
+        <canvas id="mostRunQueriesChart"></canvas>
+    </div>
+<!--    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+
+
+    <div class="container">
+        <h1 class="my-4">Ask a Question</h1>
+        <form action="/query" method="post">
+            <div class="mb-3">
+                <label for="query" class="form-label">Enter your query:</label>
+                <input type="text" class="form-control" id="query" name="query" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+
+    {% block content %}
+    {% endblock %}
+
+
+
+    <script>
+        function loadTopScorers() {
+            fetch('/top_scorers')
+                .then(response => response.json())
+                .then(data => {
+                    const table = document.getElementById('top-scorers-table');
+                    data.forEach((player, index) => {
+                        const row = table.insertRow();
+                        row.innerHTML = `
+                            <th scope="row">${index + 1}</th>
+                            <td>${player.striker}</td>
+                            <td>${player.total_runs}</td>
+                        `;
+                    });
+                });
+        }
+
+         function loadMostRunQueriesChart() {
+        fetch('/most_run_queries')
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(d => d.query);
+                const counts = data.map(d => d.query_count);
+
+                const ctx = document.getElementById('mostRunQueriesChart').getContext('2d');
+                const chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Query Count',
+                            data: counts,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.2)',
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(255, 206, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)',
+                                'rgba(153, 102, 255, 0.2)',
+                                'rgba(255, 159, 64, 0.2)',
+                                'rgba(255, 99, 132, 0.2)',
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(255, 206, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)',
+                                'rgba(255, 159, 64, 1)',
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                             }
+                         },
+
+                        onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const queryIndex = elements[0].index;
+                            const selectedQuery = labels[queryIndex];
+                            userQuery(selectedQuery);
+                        }
+                    }
+
+
+                      }
+                    });
+
+
+                });
+           }
+
+
+           async function userQuery(query) {
+             const isXHR = true;
+             const headers = {};
+             headers['X-Request-Type'] = 'XHR';
+             const response = await fetch('/query', {
+                method: 'POST',
+                headers,
+                body: new URLSearchParams({ query }),
+             });
+
+        if (response.ok) {
+        const data = await response.json();
+        const result = data.result;
+        const table = document.createElement('table');
+        const headerRow = table.insertRow();
+        for (let key in result[0]) {
+            const headerCell = headerRow.insertCell();
+            headerCell.textContent = key;
+        }
+        for (let row of result) {
+            const dataRow = table.insertRow();
+            for (let value of Object.values(row)) {
+                const dataCell = dataRow.insertCell();
+                dataCell.textContent = value;
+            }
+        }
+        const queryResultDiv = document.getElementById('query-result');
+        queryResultDiv.innerHTML = '';
+        queryResultDiv.appendChild(table);
+
+        // Update the query and sql_query values
+        const queryElem = document.querySelector('#query2');
+        queryElem.textContent = data.query2;
+        const sqlQueryElem = document.querySelector('#sql-query');
+        sqlQueryElem.textContent = data.sql_query;
+
+    } else {
+        alert(`Error: ${response.statusText}`);
+    }
+
+
+
+
+}
+
+
+
+
+
+
+            window.onload = () => {
+                loadTopScorers();
+                loadMostRunQueriesChart();
+            };
+
+
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+gunicorn
+openai
+sqlite3
+sqlparse
+python-multipart
